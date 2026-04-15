@@ -1,19 +1,39 @@
-DROP TABLE analytics.event_2026_01;
+DROP TABLE IF EXISTS events_2026_01;
+
+CREATE TABLE IF NOT EXISTS events_archive (
+    LIKE analytics.event INCLUDING ALL
+);
 
 
-SELECT
-    child.relname AS partition_name
-FROM pg_inherits
-JOIN pg_class parent ON pg_inherits.inhparent = parent.oid
-JOIN pg_class child ON pg_inherits.inhrelid = child.oid
-WHERE parent.relname = 'event';
+INSERT INTO events_archive
+SELECT *
+FROM analytics.event
+WHERE event_time < '2026-05-01';
 
-SELECT schemaname, tablename
-FROM pg_tables
-WHERE tablename = 'events_2026_04';
 
-DROP TABLE public.events_2026_04;
 
--- Create archive table
-CREATE TABLE analytics.event_archive AS
-SELECT * FROM analytics.event_2026_01;
+DELETE FROM analytics.event
+WHERE event_time < '2026-03-01';
+
+
+
+CREATE OR REPLACE FUNCTION archive_and_cleanup(p_cutoff_date TIMESTAMP)
+RETURNS VOID AS $$
+BEGIn
+    INSERT INTO events_archive
+    SELECT *
+    FROM analytics.event
+    WHERE event_time < p_cutoff_date;
+	
+    DELETE FROM analytics.event
+    WHERE event_time < p_cutoff_date;
+
+    RAISE NOTICE 'Archival and cleanup completed';
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+SELECT archive_and_cleanup('2026-05-01');
+
+
