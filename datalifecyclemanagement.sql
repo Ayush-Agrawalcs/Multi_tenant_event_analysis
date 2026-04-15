@@ -1,3 +1,6 @@
+DROP TABLE analytics.event_2026_01;
+
+
 SELECT
     child.relname AS partition_name
 FROM pg_inherits
