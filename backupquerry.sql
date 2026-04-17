@@ -1,1 +1,1 @@
--- pg_dump -u postgres -d event.analyusis -f filepath
+-- pg_dump -u postgres -d event.analysis -f filepath
